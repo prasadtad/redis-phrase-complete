@@ -5,6 +5,10 @@ A redis autocomplete library that allows phrase search
 
 [![NPM](https://nodei.co/npm/rediscomplete.png?downloads=true)](https://www.npmjs.com/package/redis-phrase-complete)
 
+## Installation
+
+npm install redis-phrase-complete
+
 ## Usage
 
 ```
