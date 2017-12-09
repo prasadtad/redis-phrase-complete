@@ -6,10 +6,10 @@ require('util.promisify/shim')()
 const redis = require('redis-promisify')
 
 module.exports = class RedisPhraseComplete {
-    constructor(port, host, options) {
+    constructor(options) {
         options = options || {}
         this.namespace = options.namespace || 'AutoComplete'
-        this.client = redis.createClient(port, host)
+        this.client = options.client || redis.createClient(options.port || 6379, options.host || 'localhost')
         this.getKey = this.getKey.bind(this)
         this.whenSetOp = this.whenSetOp.bind(this)
         this.whenAdd = this.whenAdd.bind(this)

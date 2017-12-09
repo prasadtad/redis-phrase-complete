@@ -1,6 +1,6 @@
 const RedisPhraseComplete = require('./index')
 
-const redisPhraseComplete = new RedisPhraseComplete(6379, 'localhost', {namespace: 'AutoCompleteTest'})
+const redisPhraseComplete = new RedisPhraseComplete({ namespace: 'AutoCompleteTest'})
 
 const _ = require('lodash')
 
