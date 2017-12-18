@@ -3,7 +3,7 @@ A redis autocomplete library that allows phrase search
 
 [![Build Status](https://travis-ci.org/recipeshelf/redis-phrase-complete.png?branch=master)](https://travis-ci.org/recipeshelf/redis-phrase-complete)
 
-[![NPM](https://nodei.co/npm/rediscomplete.png?downloads=true)](https://www.npmjs.com/package/redis-phrase-complete)
+[![NPM](https://nodei.co/npm/redis-phrase-complete.png?downloads=true)](https://www.npmjs.com/package/redis-phrase-complete)
 
 ## Installation
 
@@ -18,7 +18,7 @@ const redisPhraseComplete = new RedisPhraseComplete({ port: 6379, host: 'localho
 
 redisPhraseComplete.whenAdd('The quick brown fox jumps over the lazy dog', '1')
                    .then(() => redisPhraseComplete.whenFind('brown fox'))
-                   .then(ids => console.log(ids))
+                   .then(console.log)
                    .then(redisPhraseComplete.whenQuit)                   
 ```
 ## Api
