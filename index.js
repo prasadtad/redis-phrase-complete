@@ -9,15 +9,8 @@ module.exports = class RedisPhraseComplete {
     constructor(options) {
         options = options || {}
         this.namespace = options.namespace || 'AutoComplete'
-        this.client = options.client || redis.createClient(options.port || 6379, options.host || 'localhost')
-        this.getKey = this.getKey.bind(this)
-        this.whenSetOp = this.whenSetOp.bind(this)
-        this.whenAdd = this.whenAdd.bind(this)
-        this.whenRemove = this.whenRemove.bind(this)
-        this.whenRemoveAll = this.whenRemoveAll.bind(this)
-        this.whenScan = this.whenScan.bind(this)
-        this.whenFind = this.whenFind.bind(this)
-        this.whenQuit = this.whenQuit.bind(this)        
+        this.client = options.client || (options.endpoint ? redis.createClient(options.endpoint) : redis.createClient(options.port || 6379, options.host || 'localhost'))
+        _.bindAll(this, 'getKey', 'whenAddRemove', 'whenAdd', 'whenRemove', 'whenRemoveAll', 'whenScan', 'whenFind', 'whenQuit')
     }
 
     getKey(phrase) {
@@ -34,19 +27,19 @@ module.exports = class RedisPhraseComplete {
         return phrases        
     }
 
-    whenSetOp(sentence, id, add) {
+    whenAddRemove(sentence, id, add) {
         const transaction = this.client.multi()
         for (const phrase of this.getPhrases(sentence))
-            add ? transaction.sadd(this.getKey(phrase), id) : transaction.srem(this.getKey(phrase), id)
+            add ? transaction.hset(this.getKey(phrase), sentence, id) : transaction.hdel(this.getKey(phrase), sentence)
         return transaction.execAsync()
     }
 
     whenAdd(sentence, id) {
-        return this.whenSetOp(sentence, id, true)
+        return this.whenAddRemove(sentence, id, true)
     }
 
     whenRemove(sentence, id) {
-        return this.whenSetOp(sentence, id, false)
+        return this.whenAddRemove(sentence, id, false)
     }
 
     whenRemoveAll() {
@@ -73,8 +66,16 @@ module.exports = class RedisPhraseComplete {
     whenFind(searchPhrase) {
         searchPhrase = searchPhrase.toLowerCase()
         return this.whenScan('0', [], this.getKey(searchPhrase) + '*')
-                    .then(keys => Promise.all(_.map(keys, key => this.client.smembersAsync(key)))
-                                        .then(ids => Promise.resolve(_.uniq(_.flatten(ids)))))
+                    .then(keys => Promise.all(_.map(keys, key => this.client.hgetallAsync(key))))
+                    .then(allFieldValues => {
+                        const results = []
+                        for (const fieldValues of allFieldValues)
+                        {
+                            for (const field of _.keys(fieldValues))
+                                results.push({ sentence: field, id: fieldValues[field] })
+                        }
+                        return Promise.resolve(results)
+                    })                
     }
    
     whenQuit() { return this.client.quitAsync() }    

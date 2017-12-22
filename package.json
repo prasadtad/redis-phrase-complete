@@ -1,6 +1,6 @@
 {
   "name": "redis-phrase-complete",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "A redis autocomplete library that allows phrase search",
   "scripts": {
     "test": "node test.js"

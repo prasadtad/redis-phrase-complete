@@ -14,7 +14,13 @@ npm install redis-phrase-complete
 ```
 const RedisPhraseComplete = require('redis-phrase-complete')
 
-const redisPhraseComplete = new RedisPhraseComplete({ port: 6379, host: 'localhost', namespace: 'AutoCompleteTest'})
+const redisPhraseComplete = new RedisPhraseComplete({ 
+    namespace: 'AutoCompleteTest',
+    port: 6379, 
+    host: 'localhost',
+    endpoint: 'redis://localhost:6379', 
+    client: redis.createClient...
+})
 
 redisPhraseComplete.whenAdd('The quick brown fox jumps over the lazy dog', '1')
                    .then(() => redisPhraseComplete.whenFind('brown fox'))
@@ -27,9 +33,10 @@ redisPhraseComplete.whenAdd('The quick brown fox jumps over the lazy dog', '1')
 
 If options aren't passed, it uses defaults.
 
+- namespace: The namespace used for the phrasecomplete index. The default is 'AutoComplete'.
 - port: Port address for the redis instance. The default is 6379.
 - host: The hostname for the redis instance. The default is localhost.
-- namespace: The namespace used for the phrasecomplete index. The default is 'AutoComplete'.
+- endpoint: Add the full endpoint for redis, an alternative to setting port and hostname.
 - client: Use to pass in your own client.
 
 ### whenAdd(sentence, id)
@@ -46,7 +53,7 @@ Removes all entries under the namespace passed into the constructor.
 
 ### whenFind(searchPhrase)
 
-Returns all ids that match, uses a searchPhrase* pattern.
+Returns all ids and the original sentences that the phrase is part of, uses a searchPhrase* pattern.
 
 ### whenQuit()
 
