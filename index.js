@@ -20,7 +20,7 @@ module.exports = class RedisPhraseComplete {
     getPhrases(sentence)
     {
         if (!sentence) return []
-        let phrases = sentence.toLowerCase().split(/[(),!\\.-\s]+/g)
+        let phrases = _.words(sentence.toLowerCase())
         phrases = _.filter(phrases, p => p && p.length > 0)        
         for (let i = phrases.length - 2; i >= 0; i--)
             phrases[i] = (phrases[i] + ' ' + phrases[i + 1]).trim()
