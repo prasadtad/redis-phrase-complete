@@ -1,15 +1,29 @@
 // index.js
 
-const _ = require('lodash')
 
-require('util.promisify/shim')()
-const redis = require('redis-promisify')
+const _ = require('lodash')
+const { createClient } = require('redis')
 
 module.exports = class RedisPhraseComplete {
     constructor(options) {
         options = options || {}
         this.namespace = options.namespace || 'AutoComplete'
-        this.client = options.client || (options.endpoint ? redis.createClient(options.endpoint) : redis.createClient(options.port || 6379, options.host || 'localhost'))
+        if (options.client) {
+            this.client = options.client
+        } else {
+            // Support endpoint (URL) or host/port
+            if (options.endpoint) {
+                this.client = createClient({ url: options.endpoint })
+            } else {
+                this.client = createClient({
+                    socket: {
+                        host: options.host || 'localhost',
+                        port: options.port || 6379
+                    }
+                })
+            }
+            this.client.connect()
+        }
         _.bindAll(this, 'getKey', 'whenAddRemove', 'whenAdd', 'whenRemove', 'whenRemoveAll', 'whenScan', 'whenFind', 'whenQuit')
     }
 
@@ -27,56 +41,56 @@ module.exports = class RedisPhraseComplete {
         return phrases        
     }
 
-    whenAddRemove(sentence, id, add) {
+    async whenAddRemove(sentence, id, add) {
         const transaction = this.client.multi()
-        for (const phrase of this.getPhrases(sentence))
-            add ? transaction.hset(this.getKey(phrase), sentence, id) : transaction.hdel(this.getKey(phrase), sentence)
-        return transaction.execAsync()
-    }
-
-    whenAdd(sentence, id) {
-        return this.whenAddRemove(sentence, id, true)
-    }
-
-    whenRemove(sentence, id) {
-        return this.whenAddRemove(sentence, id, false)
-    }
-
-    whenRemoveAll() {
-        return this.whenScan('0', [], this.namespace + ':*')
-                    .then(keys => keys && keys.length > 0 ? this.client.delAsync(...keys) : Promise.resolve())                    
-    }
-
-    whenScan(cursor, results, pattern) { 
-        const args = [cursor]
-        if (pattern) {
-            args.push('MATCH')
-            args.push(pattern)
+        for (const phrase of this.getPhrases(sentence)) {
+            if (add) {
+                transaction.hSet(this.getKey(phrase), sentence, id)
+            } else {
+                transaction.hDel(this.getKey(phrase), sentence)
+            }
         }
-        args.push('COUNT')
-        args.push(100)
-        return this.client.scanAsync(...args)
-                .then(r => {
-                    results.push(...r[1])
-                    if (r[0] === '0') return Promise.resolve(results)                        
-                    return this.whenScan(r[0], results, pattern)
-                })
+        return await transaction.exec()
     }
 
-    whenFind(searchPhrase) {
+    async whenAdd(sentence, id) {
+        return await this.whenAddRemove(sentence, id, true)
+    }
+
+    async whenRemove(sentence, id) {
+        return await this.whenAddRemove(sentence, id, false)
+    }
+
+    async whenRemoveAll() {
+        const keys = await this.whenScan('0', [], this.namespace + ':*')
+        if (keys && keys.length > 0) {
+            await this.client.del(...keys)
+        }
+    }
+
+    async whenScan(cursor, results, pattern) {
+        const options = { COUNT: 100 };
+        if (pattern) {
+            options.MATCH = pattern;
+        }
+        const res = await this.client.scan(cursor, options);
+        results.push(...res.keys);
+        if (res.cursor === '0') return results;
+        return this.whenScan(res.cursor, results, pattern);
+    }
+
+    async whenFind(searchPhrase) {
         searchPhrase = searchPhrase.toLowerCase()
-        return this.whenScan('0', [], this.getKey(searchPhrase) + '*')
-                    .then(keys => Promise.all(_.map(keys, key => this.client.hgetallAsync(key))))
-                    .then(allFieldValues => {
-                        const results = []
-                        for (const fieldValues of allFieldValues)
-                        {
-                            for (const field of _.keys(fieldValues))
-                                results.push({ sentence: field, id: fieldValues[field] })
-                        }
-                        return Promise.resolve(results)
-                    })                
+        const keys = await this.whenScan('0', [], this.getKey(searchPhrase) + '*')
+        const allFieldValues = await Promise.all(keys.map(key => this.client.hGetAll(key)))
+        const results = []
+        for (const fieldValues of allFieldValues) {
+            for (const field of _.keys(fieldValues)) {
+                results.push({ sentence: field, id: fieldValues[field] })
+            }
+        }
+        return results
     }
    
-    whenQuit() { return this.client.quitAsync() }    
+    async whenQuit() { return await this.client.quit() }
 }
