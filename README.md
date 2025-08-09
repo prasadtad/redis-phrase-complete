@@ -4,7 +4,7 @@ A redis autocomplete library that allows phrase search
 
 [![Node.js CI](https://github.com/prasadtad/redis-phrase-complete/actions/workflows/nodejs.yml/badge.svg?branch=master)](https://github.com/prasadtad/redis-phrase-complete/actions/workflows/nodejs.yml)
 
-[![NPM](https://nodei.co/npm/redis-phrase-complete.png?downloads=true)](https://www.npmjs.com/package/redis-phrase-complete)
+[![npm version](https://img.shields.io/npm/v/redis-phrase-complete.svg)](https://www.npmjs.com/package/redis-phrase-complete)
 
 npm install redis-phrase-complete
 
