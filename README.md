@@ -1,33 +1,46 @@
+
 # redis-phrase-complete
 A redis autocomplete library that allows phrase search
 
-[![Build Status](https://travis-ci.org/recipeshelf/redis-phrase-complete.png?branch=master)](https://travis-ci.org/recipeshelf/redis-phrase-complete)
+[![Node.js CI](https://github.com/prasadtad/redis-phrase-complete/actions/workflows/nodejs.yml/badge.svg?branch=master)](https://github.com/prasadtad/redis-phrase-complete/actions/workflows/nodejs.yml)
 
 [![NPM](https://nodei.co/npm/redis-phrase-complete.png?downloads=true)](https://www.npmjs.com/package/redis-phrase-complete)
 
+npm install redis-phrase-complete
+
+## Requirements
+
+- Node.js 18 or newer
+- Redis server (local or remote)
+- Uses the latest `redis` client (v4+)
+
 ## Installation
 
+```sh
 npm install redis-phrase-complete
+```
 
 ## Usage
 
-```
+```js
 const RedisPhraseComplete = require('redis-phrase-complete')
 
-const redisPhraseComplete = new RedisPhraseComplete({ 
+const redisPhraseComplete = new RedisPhraseComplete({
     namespace: 'AutoCompleteTest',
-    port: 6379, 
+    port: 6379,
     host: 'localhost',
-    endpoint: 'redis://localhost:6379', 
-    client: redis.createClient...
+    // or use endpoint: 'redis://localhost:6379'
 })
 
-redisPhraseComplete.whenAdd('The quick brown fox jumps over the lazy dog', '1')
-                   .then(() => redisPhraseComplete.whenFind('brown fox'))
-                   .then(console.log)
-                   .then(redisPhraseComplete.whenQuit)                   
+(async () => {
+    await redisPhraseComplete.whenAdd('The quick brown fox jumps over the lazy dog', '1')
+    const results = await redisPhraseComplete.whenFind('brown fox')
+    console.log(results)
+    await redisPhraseComplete.whenQuit()
+})()
 ```
-## Api
+
+## API
 
 ### new RedisPhraseComplete(options)
 
